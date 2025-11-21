@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>超級新聞人群群二代</title>
+    <title>群群機器人二代</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght=400;700;900&display=swap');
         :root {
             --primary-color: #940b53; /* Deep Crimson for 'Super' feel */
             --secondary-color: #e53e3e; /* Red Accent */
@@ -96,7 +96,7 @@
                 ✨ 超級新聞人群群二代
             </h1>
             <p class="text-gray-600 mt-3 font-medium">
-                專為《ETtoday》風格定制的專業內容生成引擎。
+                《ETtoday》風格內容生成引擎。
             </p>
             <p class="text-xs text-red-500 mt-4 font-mono">
                 【重要】請在程式碼中填入您的 API Key 才能使用。
@@ -141,7 +141,7 @@
     <script type="module">
         // 🚨 【重要】請在此處貼上您的 Google Gemini API Key
         // 如果您在 Canvas 環境中運行，請保持為空
-        const apiKey = "AIzaSyD8qwGksRnr41_B3DO980sD8GzmUbfKet8"; 
+        const apiKey = ""; 
 
         // API URL
         const apiUrlBase = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -311,6 +311,7 @@
                     if (i === maxRetries - 1) throw error;
                 }
                 const waitTime = delay * Math.pow(2, i);
+                console.warn(`API 請求失敗，將在 ${waitTime} 毫秒後重試...`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
             throw new Error('API 請求在 7 次重試後仍失敗。錯誤: 伺服器忙碌 (503) 或流量限制 (429)。');
@@ -332,6 +333,10 @@
                 inputContent = document.getElementById('rewriteLinkInput').value.trim();
                 sourceName = document.getElementById('sourceName').value.trim() || '某知名媒體';
                 if (!inputContent) { displayError('請輸入新聞全文或連結。'); return; }
+                if (!sourceName || sourceName === '某知名媒體') { 
+                    displayError('請填寫來源媒體名稱，這是新聞改寫模式的嚴格要求。'); 
+                    return; 
+                }
             } else if (mode === 'news' || mode === 'rewrite_pr' || mode === 'interview') {
                 const elementId = inputTemplates[mode].id;
                 inputContent = document.getElementById(elementId).value.trim();
@@ -347,8 +352,10 @@
             switch(mode) {
                 case 'news':
                     isGroundingEnabled = true;
-                    loadingMessage.textContent = '正在以《ETtoday》風格生成新聞與六標題...';
+                    loadingMessage.textContent = '正在生成新聞與標題...';
                     systemInstruction = `你是專業的娛樂新聞編輯，撰稿風格必須模仿《三立新聞網》記者蔡維歆或《ETtoday新聞雲》記者田暐瑋的筆法：語氣生動、節奏明快、大量使用問號或驚嘆詞、內容具備衝擊性。
+
+                    **標題力道 (Title Strength):** 你的標題必須是「流量爆發型」標題，極度吸睛、煽動情緒，並使用讀者感到好奇的關鍵詞（如：暴雷、震撼、不忍看、怒了、黑歷史等），以確保最大的點擊率。
                     
                     請根據以下嚴格要求輸出：
                     1. 總段落數：**${paragraphCount}** 段。
@@ -358,8 +365,8 @@
                     請嚴格按照以下六種標題分類和一篇新聞稿內容來輸出結果，使用 Markdown 格式：
                     
                     ### 標題列表 (Title List)
-                    1. 正常娛樂標題 (長標，約 25 字): 
-                    2. 正常娛樂標題 (短標，約 15 字): 
+                    1. 標準流量標題 (長標，約 25 字): 
+                    2. 標準流量標題 (短標，約 15 字): 
                     3. 藏標型標題 (長標，約 25 字): 標題帶有懸念，不完全透露事件結果。
                     4. 藏標型標題 (短標，約 15 字): 標題帶有懸念，不完全透露事件結果。
                     5. 特殊型標題 (長標，約 25 字): 標題使用諧音、梗或流行語等特殊手法。
@@ -375,7 +382,10 @@
                     isGroundingEnabled = true;
                     loadingMessage.textContent = '正在改寫新聞，並以新事件填補 25-30% 內容...';
                     systemInstruction = `你是專業的娛樂新聞改寫編輯。你的任務是改寫用戶提供的原始新聞全文或連結內容，並遵循以下嚴格要求：
-                    1. 輸出六種標題，格式與「重點轉新聞」模式相同。
+                    
+                    **標題力道 (Title Strength):** 你的標題必須是「流量爆發型」標題，極度吸睛、煽動情緒，並使用讀者感到好奇的關鍵詞（如：暴雷、震撼、不忍看、怒了、黑歷史等），以確保最大的點擊率。
+
+                    1. 輸出六種標題，格式與「重點轉新聞」模式相同（使用標準流量標題、藏標型標題、特殊型標題）。
                     2. 輸出總段落數：**固定為 4 段**。
                     3. 首段字數：**不超過 140 字**。
                     4. 其餘段落字數：**介於 130 字至 200 字之間**。
@@ -386,13 +396,15 @@
                     請使用 Markdown 格式輸出「標題列表」和「新聞稿內容」。
                     `;
                     // 將輸入內容作為提示詞的一部分
-                    const rewritePrompt = `請根據系統指示，改寫以下內容：\n\n${inputContent}`;
+                    const rewritePrompt = `原始新聞內容或連結：\n\n${inputContent}\n\n請根據系統指示，改寫以上內容。`;
                     payload = { contents: [{ parts: [{ text: rewritePrompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] }, tools: [{ "google_search": {} }] };
                     break;
                 
                 case 'rewrite_pr':
-                    loadingMessage.textContent = '正在整理公關稿，重新編排並生成六標題...';
-                    systemInstruction = `你是資深的娛樂公關編輯。你的任務是將公關提供的新聞稿件順稿、整理重點，並重新編排成一篇專業的新聞。如果原文內容完整且無贅詞，可以直接全文照登。
+                    loadingMessage.textContent = '正在整理新關稿，重新編排並生成標題...';
+                    systemInstruction = `你是資深的娛樂新聞編輯。你的任務是將公關提供的新聞稿件順稿、整理重點，並重新編排成一篇專業的新聞。如果原文內容完整且無贅詞，可以直接全文照登。
+                    
+                    **標題力道 (Title Strength):** 你的標題必須是「流量爆發型」標題，極度吸睛、煽動情緒，並使用讀者感到好奇的關鍵詞（如：暴雷、震撼、不忍看、怒了、黑歷史等），以確保最大的點擊率。
                     
                     請根據以下嚴格要求輸出：
                     1. 總段落數：**${paragraphCount}** 段。
@@ -402,8 +414,8 @@
                     請嚴格按照以下六種標題分類和一篇新聞稿內容來輸出結果，使用 Markdown 格式：
                     
                     ### 標題列表 (Title List)
-                    1. 正常娛樂標題 (長標，約 25 字): 
-                    2. 正常娛樂標題 (短標，約 15 字): 
+                    1. 標準流量標題 (長標，約 25 字): 
+                    2. 標準流量標題 (短標，約 15 字): 
                     3. 藏標型標題 (長標，約 25 字): 
                     4. 藏標型標題 (短標，約 15 字): 
                     5. 特殊型標題 (長標，約 25 字): 
@@ -479,9 +491,10 @@
 
                 // 6. 顯示結果和來源
                 displayResults(generatedText, sources, mode);
+                console.log("API 請求成功，結果已顯示。");
 
             } catch (error) {
-                displayError(`${error.message}`);
+                displayError(`發生嚴重錯誤: ${error.message}。請檢查 API Key 或瀏覽器 Console 尋找更多細節。`);
                 console.error("Fetch Error:", error);
             } finally {
                 // 7. 恢復 UI 狀態
@@ -527,7 +540,7 @@
                         let typeText = type.replace(':', '').trim();
                         let typeClass = 'bg-gray-200 text-gray-800'; 
 
-                        if (typeText.includes('正常娛樂標題') || typeText.includes('標準娛樂新聞標題')) typeClass = 'bg-red-100 text-red-800';
+                        if (typeText.includes('標準流量標題')) typeClass = 'bg-red-100 text-red-800';
                         else if (typeText.includes('藏標')) typeClass = 'bg-yellow-100 text-yellow-800';
                         else if (typeText.includes('特殊型標題')) typeClass = 'bg-purple-100 text-purple-800';
 
@@ -572,7 +585,18 @@
             } else if (mode === 'interview') {
                 // Interview mode list logic
                 htmlContent = text.replace(/###\s*(.+?)\s*\n/g, '<h3 class="powerful-title">$1</h3>');
-                htmlContent = htmlContent.replace(/(\d+\.\s+)(.*?)(\n|$)/g, '<p class="mt-3 font-medium text-gray-800"><span class="text-purple-700 font-extrabold">$1</span>$2</p>');
+                // 使用 <ol> 和 <li> 替換原本的 <p> 列表，讓結構更嚴謹
+                const listItems = text.match(/(\d+\.\s+)(.*?)(\n|$)/g);
+                if (listItems) {
+                    htmlContent += '<ol class="list-decimal list-inside space-y-3 pl-2">';
+                    listItems.forEach(item => {
+                        const cleanItem = item.replace(/(\d+\.\s+)/, '').trim();
+                        htmlContent += `<li class="text-gray-700 font-medium">${cleanItem}</li>`;
+                    });
+                    htmlContent += '</ol>';
+                } else {
+                    htmlContent += '<p class="text-gray-500 italic">未能生成標準的訪綱列表。</p>'
+                }
             } else {
                 // Default formatting for other modes
                 htmlContent = text.replace(/\n/g, '<br>');
